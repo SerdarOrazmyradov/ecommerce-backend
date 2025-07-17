@@ -91,8 +91,38 @@ export const updateJob = async (req, res) => {
   } = req.body;
 
   try {
+    // Ilki bilen iş barlanyp, onuň is_active ýagdaýy alynýar
+    const checkJob = await db.query(
+      `SELECT * FROM jobs WHERE id = $1`,
+      [jobId]
+    );
+
+    if (checkJob.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Job not found." });
+    }
+
+    const existingJob = checkJob.rows[0];
+
+    if (!existingJob.is_active) {
+      return res.status(403).json({
+        success: false,
+        message: "Pozlan işe (is_active = false) täzeden üýtgetme girizip bolmaýar.",
+      });
+    }
+
+    // Üýtgetmeler girizilýär
     const result = await db.query(
-      `UPDATE jobs SET title = $1, description = $2, company = $3, location = $4, category = $5, salary_range = $6, employment_type = $7, is_active = $8 WHERE id = $9 RETURNING *`,
+      `UPDATE jobs
+       SET title = $1,
+           description = $2,
+           company = $3,
+           location = $4,
+           category = $5,
+           salary_range = $6,
+           employment_type = $7,
+           is_active = $8
+       WHERE id = $9
+       RETURNING *`,
       [
         title,
         description,
@@ -106,20 +136,21 @@ export const updateJob = async (req, res) => {
       ]
     );
 
-    if (result.rows.length > 0) {
-      res.status(200).json({
-        success: true,
-        message: "Job updated successfully.",
-        job: result.rows[0],
-      });
-    } else {
-      res.status(404).json({ success: false, message: "Job not found." });
-    }
+    res.status(200).json({
+      success: true,
+      message: "Job updated successfully.",
+      job: result.rows[0],
+    });
+
   } catch (error) {
     console.error("Error updating job:", error);
-    res.status(500).json({ success: false, message: "An error occurred." });
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while updating the job.",
+    });
   }
 };
+
 
 export const deleteEmployerJob = async (req, res) => {
   const jobId = req.params.id;

@@ -1,15 +1,16 @@
 import pg from "pg";
+import "dotenv/config";
 
 export const db = new pg.Client({
-  user: "postgres",
+  user: process.env.DB_USER,
 
-  host: "localhost",
+  host: process.env.DB_HOST,
 
-  database: "job board project",
+  database: process.env.DB_NAME,
 
-  password: "serdar090704",
+  password: process.env.DB_PASSWORD,
 
-  port: 5432,
+  port: process.env.DB_PORT,
 });
 
 db.connect();

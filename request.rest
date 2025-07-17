@@ -9,6 +9,8 @@
 @serdar27_job_seeker_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzMsIm5hbWUiOiJzZXJkYXIyNyIsInJvbGUiOiJqb2Jfc2Vla2VyIiwiaWF0IjoxNzUwNzUwNDAyfQ.bR1-aEVXqrGZKhyN5QyLy5pT-D0q_omkcDtZWlu9nQs
 @serdar28_job_seeker_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzQsIm5hbWUiOiJzZXJkYXIyOCIsInJvbGUiOiJqb2Jfc2Vla2VyIiwiaWF0IjoxNzUwODI4NzAxfQ.ACjTMxpmP105e-K-FDrEsZio5dHS7JR0I_w7Lb9ssfY
 @ADMIN1_TOKEN = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzUsIm5hbWUiOiJBRE1JTjEiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTA4Mzc2MDR9.c4P088P7sWo7CfQtK6AmoOuw5_UqjPbF5psGzdy9ycM
+@ADMIN2_TOKEN = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzYsIm5hbWUiOiJBRE1JTjIiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTA5MjUwMTB9.pJEkj6-dJqBNZGA2kSCJyzr_Gl-4dTAp5WKkYHS6p1U
+
 
 ##############################################
 ############### SIGN UP/ LOGIN ###############
@@ -17,9 +19,8 @@ POST {{baseUrlAUTH}}/auth/api/signup
 Content-Type: application/json
 
 {
-    "username": "ADMIN1",
-    "password": "121212121",
-    "role": "admin"
+    "username": "ADMIN2",
+    "password": "121212121"
 }
 
 //✅username unique
@@ -29,9 +30,9 @@ POST {{baseUrlAUTH}}/auth/api/login
 Content-Type: application/json
 
 {
-    "username": "serdar24",
+    "username": "ADMIN2",
     "password": "121212121",
-    "role": "employer"
+    "role": "admin"
 }
 //✅login
 ############################################
@@ -44,7 +45,7 @@ Content-Type: application/json
 Authorization: Bearer {{serdar24_employer_token}}
 
 {
-    "title": "5555",
+    "title": "5555445",
     "description": "description",
     "company": "company",
     "location": "location",
@@ -81,7 +82,7 @@ Content-Type: application/json
 Authorization: Bearer {{serdar23_employer_token}}
 
 {
-    "title": "frontend3",
+    "title": "frontend5",
     "description": "description",
     "company": "company",
     "location": "location",
@@ -92,6 +93,7 @@ Authorization: Bearer {{serdar23_employer_token}}
 }
  
 //✅job update edýär;
+//
 
 ###
 
@@ -144,27 +146,181 @@ Authorization: Bearer {{serdar27_job_seeker_token}}
 //✅filter
 
 ###
-DELETE {{baseUrlSERVER}}/jobs/api/job-seeker/delete-applyed-job/220
+DELETE {{baseUrlSERVER}}/jobs/api/job-seeker/delete-applyed-job/428
 Content-Type: application/json
 Authorization: Bearer {{serdar25_job_seeker_token}}
 
 //✅apply edilen işi delete edip bilýärmi?
 
 
-
 #############################################
 ################### ADMIN ###################
 #############################################
-# GET {{baseUrlSERVER}}/admin/api/jobs
-# Authorization: Bearer {{ADMIN1_TOKEN}}
-//❌filter -title,username,...
+
+ GET {{baseUrlSERVER}}/admin/api/jobs
+ Authorization: Bearer {{ADMIN1_TOKEN}}
+
+
+###
+ DELETE {{baseUrlSERVER}}/admin/api/job/486
+ Authorization: Bearer {{ADMIN1_TOKEN}}
+
+ 
+###
+
+ GET {{baseUrlSERVER}}/admin/api/users?role=employer
+ Authorization: Bearer {{ADMIN1_TOKEN}}
+
+###
+ DELETE {{baseUrlSERVER}}/admin/api/user/30
+ Authorization: Bearer {{ADMIN1_TOKEN}}
+
+###
+ GET {{baseUrlSERVER}}/admin/api/fav-jobs
+ Authorization: Bearer {{ADMIN1_TOKEN}}
+
+###
+
+
+
+
 #############################################
 #################### END ####################
 #############################################
 
+//❌delete edilen employer-leriň job-lary job_seeker-lere görünmeli däl!
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+################################################################################################
+########################################## E-COMMERCE ##########################################
+################################################################################################
+# @serdar1_user_token
+
+//❌-token
+
+#############################################
+################### ADMIN ###################
+#############################################
+
+########################
+###### categories ######
+########################
+GET {{baseUrlSERVER}}/admin/api/categories
+###
+POST {{baseUrlSERVER}}/admin/api/create-category
+# Authorization: Bearer 
+Content-Type: application/json
+
+{
+    "name":"süýt önümleri"
+}
+
+###
+PUT {{baseUrlSERVER}}/admin/api/update-category/3
+# Authorization: Bearer 
+Content-Type: application/json
+
+{
+    "name":"cars"
+}
+
+###
+DELETE {{baseUrlSERVER}}/admin/api/delete-category/1
+
+########################
+######### user #########
+########################
+
+# PUT {{baseUrlSERVER}}/admin/api/update-user/1
+# Content-Type: application/json
+
+# {
+#     "name":"",
+#     "password":"12121212"    
+# }
+###
+DELETE {{baseUrlSERVER}}/admin/api/delete-user/4
+# Authorization: Bearer 
+
+###
+GET {{baseUrlSERVER}}/admin/api/users
+###
+POST  {{baseUrlSERVER}}/admin/api/create-user
+Content-Type: application/json
+
+{
+    "username": "serdar5",
+    "password": "121212121"
+}
+
+
+#########################
+######## product ########
+#########################
+POST {{baseUrlSERVER}}/admin/api/create-product
+# Authorization: Bearer 
+Content-Type: application/json
+
+{
+    "name":"name3",
+    "description":"description3",
+    "stock":4,
+    "price":120,
+    "category_id":111,
+    "main_image":"abc.jpg"
+}
+###
+# POST {{baseUrlSERVER}}/admin/api/add-product-images
+# Authorization: Bearer 
+# Content-Type: application/json
+
+###
+PUT {{baseUrlSERVER}}/admin/api/update-product/12
+# Authorization: Bearer 
+Content-Type: application/json
+
+{
+    "name":"name2",
+    "description":"description2",
+    "stock":4,
+    "price":120,
+    "category_id":6,
+    "main_image":"abc.jpg"
+}
+
+###
+GET {{baseUrlSERVER}}/admin/api/get-products?limit=12
+###
+DELETE {{baseUrlSERVER}}/admin/api/delete-product/12
+
+##########################
+######### images #########
+##########################
+
+POST {{baseUrlSERVER}}/admin/api/add-image
+Content-Type: application/json
+
+{
+    "product_id":,
+    "img_path":""
+}
+
+###
+GET http://localhost:3000/order_item/order_items.json
 
 

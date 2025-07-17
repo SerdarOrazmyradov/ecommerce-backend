@@ -10,3 +10,4 @@ router.post("/login", loginValidation, login);
 router.post("/signup", signupValidation, signup);
 
 export default router;
+  

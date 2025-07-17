@@ -17,7 +17,7 @@ export async function signupUser(username, password, role) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const sql =
-      "INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3)";
+      "INSERT INTO users (username, pass_hash, role) VALUES ($1, $2, $3)";
     await db.query(sql, [username, hashedPassword, role]);
     return { success: true, message: "User created successfully" };
   } catch (error) {
@@ -41,7 +41,7 @@ export async function loginUser(username, password, role) {
 
     const users = result.rows;
     for (const user of users) {
-      const isMatch = await bcrypt.compare(password, user.password_hash);
+      const isMatch = await bcrypt.compare(password, user.pass_hash);
 
       if (isMatch && user.role === role) {
         const token = jwt.sign(

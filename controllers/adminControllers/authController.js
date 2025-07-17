@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
-import { loginUser, signupUser } from "../services/authService.js";
+import { loginUser, signupUser } from "../../services/authService.js";
 
 export const login = (req, res) => {
   const { username, password } = req.body;
-  const role = "customer";
+  const role = "admin";
 
   loginUser(username, password, role).then((result) => {
     if (result.success) {
@@ -13,10 +13,10 @@ export const login = (req, res) => {
     }
   });
 };
-export const signup = (req, res) => {
+export const signupAdmin = (req, res) => {
   // registrasiýa etýän service bar
   const { username, password } = req.body;
-  const role = "customer";
+  const role = "admin";
   console.log("req body:", req.body);
 
   console.log("username barmy :", username);
