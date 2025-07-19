@@ -101,7 +101,6 @@ export const updateProduct = async (req, res) => {
     console.log("req.file", req.file);
     const main_image = req.file.originalname || "";
 
-
     // 1. Id barlanýar
     if (!productId || isNaN(productId)) {
       return res
@@ -244,7 +243,7 @@ export const getAllProducts = async (req, res) => {
       stock,
       price,
       page = 1,
-      limit = 20,
+      limit = 10,
     } = req.query;
 
     const parsedStock =

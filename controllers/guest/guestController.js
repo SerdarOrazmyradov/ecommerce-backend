@@ -68,7 +68,9 @@ export const getAllFlashSalesProducts = async (req, res) => {
     // req.files.forEach((element) => {
     //   product_images.push(element.originalname);
     // });
-    const result = await getAllFlashSalesProductsGuest();
+    const page = req.query.page || 1;
+    const limit = req.query.page || 10;
+    const result = await getAllFlashSalesProductsGuest(page, limit);
     if (result.success) {
       res.status(200).json(result);
     } else {
@@ -92,7 +94,12 @@ export const getAllBestSellingProducts = async (req, res) => {
     // req.files.forEach((element) => {
     //   product_images.push(element.originalname);
     // });
-    const result = await getAllBestSellingProductsGuest();
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 10;
+
+    console.log("test edyas " + "page: " + page + " ,limit : " + limit);
+
+    const result = await getAllBestSellingProductsGuest(page, limit);
     if (result.success) {
       res.status(200).json(result);
     } else {

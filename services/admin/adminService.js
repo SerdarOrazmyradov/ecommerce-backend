@@ -329,7 +329,7 @@ export const getCategoriesAdmin = async (name, limit, page) => {
     return {
       success: true,
       message: "kategoriýa üstünlikli alyndy ",
-      date: result.rows,
+      data: result.rows,
       current_page: page,
       total_results: total_results,
       total_pages: total_pages,

@@ -112,6 +112,10 @@ export const getProductImagesByIdGuest = async (product_id) => {
     );
 
     if (productCheck.rows.length === 0) {
+      console.log({
+        success: false,
+        message: `product with id=${product_id} not found.`,
+      });
       return {
         success: false,
         message: `product with id=${product_id} not found.`,
@@ -140,11 +144,15 @@ export const getProductImagesByIdGuest = async (product_id) => {
   }
 };
 
-export const getAllFlashSalesProductsGuest = async () => {
+export const getAllFlashSalesProductsGuest = async (page, limit) => {
   try {
+    const offset = (page - 1) * limit;
+
+    // Paginated query with stock > 0 filter
     const queryText = `
       SELECT 
         p.id AS product_id,
+        p.stock,
         p.name,
         p.price,
         SUM(oi.count) AS total_count
@@ -152,18 +160,44 @@ export const getAllFlashSalesProductsGuest = async () => {
         orders_item oi
       INNER JOIN 
         products p ON p.id = oi.product_id
+      WHERE 
+        p.stock > 0
       GROUP BY 
-        p.id, p.name, p.price
+        p.id, p.name, p.price, p.stock
       ORDER BY 
-        total_count DESC;
+        total_count DESC
+      LIMIT $1 OFFSET $2;
     `;
 
-    const result = await db.query(queryText);
+    // Total count query (with same stock > 0 filter)
+    const queryTextCount = `
+      SELECT 
+        p.id AS product_id
+      FROM 
+        orders_item oi
+      INNER JOIN 
+        products p ON p.id = oi.product_id
+      WHERE 
+        p.stock > 0
+      GROUP BY 
+        p.id, p.name, p.price, p.stock;
+    `;
+
+    // Execute paginated result
+    const result = await db.query(queryText, [limit, offset]);
+
+    // Execute total count result
+    const countResult = await db.query(queryTextCount);
+    const total_results = countResult.rows.length;
+    const total_pages = Math.ceil(total_results / limit);
 
     return {
       success: true,
       message: "Iň köp satylan harytlar üstünlikli alyndy.",
       details: result.rows,
+      total_results,
+      total_pages,
+      current_page: page,
     };
   } catch (error) {
     console.error("Error getting product stats !!! :", error);
@@ -174,8 +208,11 @@ export const getAllFlashSalesProductsGuest = async () => {
     };
   }
 };
-export const getAllBestSellingProductsGuest = async () => {
+
+export const getAllBestSellingProductsGuest = async (page, limit) => {
   try {
+    const offset = (page - 1) * limit;
+
     const queryText = `
       SELECT orders_item.product_id, 
 SUM(orders_item.count) as total_count,
@@ -203,16 +240,60 @@ products.discount,
 products.oldprice,
 products.rating 
 order by total_count desc 
-limit 4;
+limit $1 offset $2 ;
+    `;
+    const queryText1 = `
+      SELECT orders_item.product_id, 
+SUM(orders_item.count) as total_count,
+products.name,
+products.description,
+products.stock,
+products.price,
+products.category_id,
+products.main_image,
+products.discount,
+products.oldprice,
+products.rating
+FROM orders_item
+INNER JOIN products
+ON products.id = orders_item.product_id
+GROUP BY  
+orders_item.product_id,
+products.name,
+products.description,
+products.stock,
+products.price,
+products.category_id,
+products.main_image,
+products.discount,
+products.oldprice,
+products.rating 
+order by total_count desc ;
     `;
 
-    const result = await db.query(queryText);
-
-    return {
-      success: true,
-      message: "Iň köp satylan harytlar üstünlikli alyndy.",
-      details: result.rows,
-    };
+    const result = await db.query(queryText, [limit, offset]);
+    const result1 = await db.query(queryText1);
+    const total_results = result1.rows.length;
+    const total_pages = Math.ceil(total_results / limit);
+    if (total_pages >= page) {
+      return {
+        success: true,
+        message: "Iň köp satylan harytlar üstünlikli alyndy.",
+        details: result.rows,
+        total_results: total_results,
+        total_pages: total_pages,
+        current_page: page,
+      };
+    } else {
+      return {
+        success: true,
+        message: "ol sahypa degişli maglumat tapylmady  ",
+        details: result.rows,
+        total_results: total_results,
+        total_pages: total_pages,
+        current_page: page,
+      };
+    }
   } catch (error) {
     console.error("Error getting product stats !!! :", error);
 
@@ -612,7 +693,7 @@ export const getAllProductsAdmin = async (
       message: "Products fetched successfully.",
       data: result.rows,
       total_results: total,
-      total_pages,
+      total_pages:total_pages,
       current_page: page,
     };
   } catch (error) {
