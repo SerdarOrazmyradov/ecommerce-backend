@@ -144,138 +144,169 @@ export const getProductImagesByIdGuest = async (product_id) => {
   }
 };
 
-export const getAllFlashSalesProductsGuest = async (page, limit) => {
+export const getAllFlashSalesProductsGuest = async (
+  page,
+  limit,
+  categories
+) => {
   try {
     const offset = (page - 1) * limit;
 
-    // Paginated query with stock > 0 filter
+    // Eger categories-de birinji element boş string ýa-da categories boş bolsa:
+
+    if (
+      !categories ||
+      categories.length === 0 ||
+      (categories.length === 1 && categories[0] === "")
+    ) {
+      // Kategoriýa filteri ulanmazdan soragy geçir
+      const queryText = `
+        SELECT products.*, categories.name as category_name
+        FROM products
+        INNER JOIN categories ON products.category_id = categories.id
+        WHERE products.discount > 0
+        ORDER BY products.discount DESC 
+        LIMIT $1 OFFSET $2;
+      `;
+      const countQuery = `
+        SELECT COUNT(*)
+        FROM products
+        INNER JOIN categories ON products.category_id = categories.id
+        WHERE products.discount > 0;
+      `;
+
+      const result = await db.query(queryText, [limit, offset]);
+      const countResult = await db.query(countQuery);
+
+      const total_results = parseInt(countResult.rows[0].count);
+      const total_pages = Math.ceil(total_results / limit);
+
+      // LEFT JOIN views v ON v.product_id = p.id
+      // WHERE
+      //     (${
+      //       search
+      //         ? LOWER(p.name) LIKE LOWER('%${search}%') OR LOWER(p.description) LIKE LOWER('%${search}%')
+      //         : "1=1"
+      //     })
+      //     AND (${
+      //       categoryList.length > 0
+      //         ? p.category_id IN (${categoryList.join(",")})
+      //         : "1=1"
+      //     })
+      //     GROUP BY
+      //     p.id
+
+      return {
+        success: true,
+        message: "Skidkaly harytlar üstünlikli alyndy.",
+        details: result.rows,
+        total_results,
+        total_pages,
+        current_page: page,
+      };
+    }
+
+    // Kategoriýa filteri bar bolan ýagdaý
+    const formattedCategories =
+      categories.map((_, i) => `$${i + 3}`).join(",") || [];
+    ("");
+    console.log("formattedCategories", formattedCategories);
+
     const queryText = `
-      SELECT 
-        p.id AS product_id,
-        p.stock,
-        p.name,
-        p.price,
-        SUM(oi.count) AS total_count
-      FROM 
-        orders_item oi
-      INNER JOIN 
-        products p ON p.id = oi.product_id
-      WHERE 
-        p.stock > 0
-      GROUP BY 
-        p.id, p.name, p.price, p.stock
-      ORDER BY 
-        total_count DESC
+      SELECT products.*, categories.name as category_name
+      FROM products
+      INNER JOIN categories ON products.category_id = categories.id
+      WHERE products.discount > 0
+        AND categories.name IN (${formattedCategories})
+      ORDER BY products.discount DESC 
       LIMIT $1 OFFSET $2;
     `;
 
-    // Total count query (with same stock > 0 filter)
-    const queryTextCount = `
-      SELECT 
-        p.id AS product_id
-      FROM 
-        orders_item oi
-      INNER JOIN 
-        products p ON p.id = oi.product_id
-      WHERE 
-        p.stock > 0
-      GROUP BY 
-        p.id, p.name, p.price, p.stock;
+    const countCategoryParams = categories
+      .map((_, i) => `$${i + 1}`)
+      .join(", ");
+    const countQuery = `
+      SELECT COUNT(*)
+      FROM products
+      INNER JOIN categories ON products.category_id = categories.id
+      WHERE products.discount > 0
+        AND categories.name IN (${countCategoryParams});
     `;
 
-    // Execute paginated result
-    const result = await db.query(queryText, [limit, offset]);
+    const result = await db.query(queryText, [limit, offset, ...categories]);
+    const countResult = await db.query(countQuery, [...categories]);
 
-    // Execute total count result
-    const countResult = await db.query(queryTextCount);
-    const total_results = countResult.rows.length;
+    const total_results = parseInt(countResult.rows[0].count);
     const total_pages = Math.ceil(total_results / limit);
 
     return {
       success: true,
-      message: "Iň köp satylan harytlar üstünlikli alyndy.",
+      message: "Skidkaly harytlar üstünlikli alyndy.",
       details: result.rows,
       total_results,
       total_pages,
       current_page: page,
     };
   } catch (error) {
-    console.error("Error getting product stats !!! :", error);
-
+    console.error("Error fetching flash sales products:", error);
     return {
       success: false,
-      message: "Iň köp satylan harytlary almakda säwlik ýüze çykdy!",
+      message: "Skidkaly harytlary almakda säwlik ýüze çykdy.",
     };
   }
 };
 
-export const getAllBestSellingProductsGuest = async (page, limit) => {
+export const getAllBestSellingProductsGuest = async (
+  page,
+  limit,
+  categories = [""]
+) => {
   try {
     const offset = (page - 1) * limit;
-
-    const queryText = `
+    const baseQuery = `
       SELECT orders_item.product_id, 
-SUM(orders_item.count) as total_count,
-products.name,
-products.description,
-products.stock,
-products.price,
-products.category_id,
-products.main_image,
-products.discount,
-products.oldprice,
-products.rating
-FROM orders_item
-INNER JOIN products
-ON products.id = orders_item.product_id
-GROUP BY  
-orders_item.product_id,
-products.name,
-products.description,
-products.stock,
-products.price,
-products.category_id,
-products.main_image,
-products.discount,
-products.oldprice,
-products.rating 
-order by total_count desc 
-limit $1 offset $2 ;
-    `;
-    const queryText1 = `
-      SELECT orders_item.product_id, 
-SUM(orders_item.count) as total_count,
-products.name,
-products.description,
-products.stock,
-products.price,
-products.category_id,
-products.main_image,
-products.discount,
-products.oldprice,
-products.rating
-FROM orders_item
-INNER JOIN products
-ON products.id = orders_item.product_id
-GROUP BY  
-orders_item.product_id,
-products.name,
-products.description,
-products.stock,
-products.price,
-products.category_id,
-products.main_image,
-products.discount,
-products.oldprice,
-products.rating 
-order by total_count desc ;
+        SUM(orders_item.count) AS total_count,
+        products.name,
+        products.description,
+        products.stock,
+        products.price,
+        products.category_id,
+        products.main_image,
+        products.discount,
+        products.oldprice,
+        products.rating,
+        categories.name as category_name
+      FROM orders_item
+      INNER JOIN products ON products.id = orders_item.product_id
+      INNER JOIN categories ON products.category_id = categories.id`;
+    const groupBY = ` GROUP BY  
+        orders_item.product_id,
+        products.name,
+        products.description,
+        products.stock,
+        products.price,
+        products.category_id,
+        products.main_image,
+        products.discount,
+        products.oldprice,
+        products.rating,categories.name 
+      ORDER BY total_count DESC
     `;
 
-    const result = await db.query(queryText, [limit, offset]);
-    const result1 = await db.query(queryText1);
-    const total_results = result1.rows.length;
-    const total_pages = Math.ceil(total_results / limit);
-    if (total_pages >= page) {
+    // kategory ýok bolsa
+    if (
+      !categories ||
+      categories.length === 0 ||
+      (categories.length === 1 && categories[0] === "")
+    ) {
+      const queryText = baseQuery + groupBY + ` LIMIT $1 OFFSET $2;`;
+      const queryText1 = baseQuery + groupBY + `;`;
+
+      const result = await db.query(queryText, [limit, offset]);
+      const result1 = await db.query(queryText1);
+
+      const total_results = result1.rows.length;
+      const total_pages = Math.ceil(total_results / limit);
       return {
         success: true,
         message: "Iň köp satylan harytlar üstünlikli alyndy.",
@@ -285,18 +316,50 @@ order by total_count desc ;
         current_page: page,
       };
     } else {
+      const newCategories = categories.map((c) => " '" + c + "' ");
+      const queryText =
+        baseQuery +
+        ` WHERE categories.name IN (${categories
+          .map((_, i) => `$${i + 3}`)
+          .join(",")})` +
+        groupBY +
+        ` LIMIT $1 OFFSET $2;`;
+      const queryText1 =
+        baseQuery +
+        ` WHERE categories.name IN (${categories
+          .map((_, i) => `$${i + 1}`)
+          .join(",")})` +
+        groupBY +
+        `;`;
+      console.log("queryText1 : ", queryText1);
+
+      const limitInt = parseInt(limit);
+      const offsetInt = parseInt(offset);
+
+      const result = await db.query(queryText, [
+        limitInt,
+        offsetInt,
+        ...categories,
+      ]);
+
+      console.log("[...categories]", categories);
+
+      const result1 = await db.query(queryText1, [...categories]);
+
+      const total_results = result1.rows.length;
+      const total_pages = Math.ceil(total_results / limitInt);
+
       return {
         success: true,
-        message: "ol sahypa degişli maglumat tapylmady  ",
+        message: "Iň köp satylan harytlar üstünlikli alyndy.",
         details: result.rows,
-        total_results: total_results,
-        total_pages: total_pages,
+        total_results,
+        total_pages,
         current_page: page,
       };
     }
   } catch (error) {
     console.error("Error getting product stats !!! :", error);
-
     return {
       success: false,
       message: "Iň köp satylan harytlary almakda säwlik ýüze çykdy!",
@@ -693,7 +756,7 @@ export const getAllProductsAdmin = async (
       message: "Products fetched successfully.",
       data: result.rows,
       total_results: total,
-      total_pages:total_pages,
+      total_pages: total_pages,
       current_page: page,
     };
   } catch (error) {

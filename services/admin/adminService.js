@@ -396,15 +396,16 @@ export const getAllProductsAdmin = async (
   stock,
   price,
   page = 1,
-  limit = 20
+  limit = 20,
+  categories
 ) => {
   try {
     const offset = (page - 1) * limit;
 
-    // Dinamik filtrler üçin WHERE şertlerini ýygnamak
+    // Dinamik WHERE şerti ýygnamak
     let filters = [];
     let values = [];
-    let i = 1; // parameter index ($1, $2, ...)
+    let i = 1;
 
     // 🔍 Ady boýunça gözleg
     if (name && name.trim() !== "") {
@@ -420,28 +421,28 @@ export const getAllProductsAdmin = async (
       i++;
     }
 
-    // 🔍 Kategoriýa ady boýunça gözleg
+    // 🔍 Kategoriýa ady boýunça gözleg (ýeke kategoriýa üçin)
     if (category && category.trim() !== "") {
       filters.push(`categories.name ILIKE $${i}`);
       values.push(`%${category.trim()}%`);
       i++;
     }
 
-    // 🔍 Takyk stock (görnüşi: = 10)
+    // 🔍 Takyk stock
     if (stock !== undefined && stock !== null && stock !== "") {
       filters.push(`products.stock = $${i}`);
       values.push(Number(stock));
       i++;
     }
 
-    // 🔍 Takyk price (görnüşi: = 100)
+    // 🔍 Takyk price
     if (price !== undefined && price !== null && price !== "") {
       filters.push(`products.price = $${i}`);
       values.push(Number(price));
       i++;
     }
 
-    // 🔗 Esasy SELECT soragy
+    // 🔗 Başlangyç SELECT
     let query = `
       SELECT 
         products.*, 
@@ -450,23 +451,39 @@ export const getAllProductsAdmin = async (
       JOIN categories ON products.category_id = categories.id
     `;
 
+    // 🧩 Kategoriýa array gelýän ýagdaý
+    if (
+      categories &&
+      categories.length > 0 &&
+      !(categories.length === 1 && categories[0] === "")
+    ) {
+      const categoryPlaceholders = categories
+        .map((_, idx) => `$${i + idx}`)
+        .join(", ");
+      filters.push(`categories.name IN (${categoryPlaceholders})`);
+      values.push(...categories);
+      i += categories.length;
+    }
+
+    // 🔍 WHERE goşmak
     if (filters.length > 0) {
       query += ` WHERE ` + filters.join(" AND ");
     }
 
-    // 🔢 Sazlanan tertip + limit & offset
+    // 🔢 LIMIT & OFFSET
     query += ` ORDER BY products.id DESC LIMIT $${i} OFFSET $${i + 1}`;
     values.push(limit);
     values.push(offset);
 
     const result = await db.query(query, values);
 
-    // 🔢 Jemi sany üçin (COUNT)
+    // 🔢 COUNT üçin ýörite sorag
     let countQuery = `
       SELECT COUNT(*) AS total
       FROM products
       JOIN categories ON products.category_id = categories.id
     `;
+
     if (filters.length > 0) {
       countQuery += ` WHERE ` + filters.join(" AND ");
     }

@@ -69,8 +69,16 @@ export const getAllFlashSalesProducts = async (req, res) => {
     //   product_images.push(element.originalname);
     // });
     const page = req.query.page || 1;
-    const limit = req.query.page || 10;
-    const result = await getAllFlashSalesProductsGuest(page, limit);
+    const limit = req.query.limit || 10;
+
+    const categoriesQuery = req.query.categories || "";
+
+    const categories = categoriesQuery.split(",").map((c) => c.trim());
+    
+    console.log("test edyas " + ":categories ", categories);
+    console.log("test edyas " + ":categoriesQuery ", categoriesQuery);
+    //  /api/flash-products?page=1&categories=dd,c,
+    const result = await getAllFlashSalesProductsGuest(page, limit, categories);
     if (result.success) {
       res.status(200).json(result);
     } else {
@@ -97,9 +105,18 @@ export const getAllBestSellingProducts = async (req, res) => {
     const page = req.query.page || 1;
     const limit = req.query.limit || 10;
 
-    console.log("test edyas " + "page: " + page + " ,limit : " + limit);
+    const categoriesQuery = req.query.categories || "";
 
-    const result = await getAllBestSellingProductsGuest(page, limit);
+    const categories = categoriesQuery.split(",").map((c) => c.trim());
+
+    console.log("test edyas " + ":categories ", categories);
+    console.log("test edyas " + ":categoriesQuery ", categoriesQuery);
+
+    const result = await getAllBestSellingProductsGuest(
+      page,
+      limit,
+      categories
+    );
     if (result.success) {
       res.status(200).json(result);
     } else {

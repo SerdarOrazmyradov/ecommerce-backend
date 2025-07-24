@@ -246,6 +246,14 @@ export const getAllProducts = async (req, res) => {
       limit = 10,
     } = req.query;
 
+    const categoriesQuery = req.query.categories || "";
+
+    const categories = categoriesQuery.split(",").map((c) => c.trim());
+
+    // console.log("salam test edyas " + urlencoded(name));
+    // console.log("salam test edyas " + urlencoded(description));
+    // console.log("salam test edyas " + urlencoded(category));
+
     const parsedStock =
       stock !== undefined && stock !== "" ? Number(stock) : undefined;
     const parsedPrice =
@@ -260,7 +268,8 @@ export const getAllProducts = async (req, res) => {
       parsedStock,
       parsedPrice,
       parsedPage,
-      parsedLimit
+      parsedLimit,
+      categories
     );
 
     return res.status(200).json(result);
