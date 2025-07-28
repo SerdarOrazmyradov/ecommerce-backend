@@ -10,6 +10,7 @@ import {
 import { verifyUser } from "../middleware/user/user-middleware.js";
 import {
   createOrder,
+  getMyOrders,
   logout,
   trackOrderStatus,
 } from "../controllers/userControllers/user_controller.js";
@@ -26,6 +27,14 @@ router.post(
   createOrderValidation,
   // upload1.single("order_items"),
   createOrder
+);
+router.get(
+  "/my-orders",
+  verifyToken,
+  verifyUser,
+  // createOrderValidation,
+  // upload1.single("order_items"),
+  getMyOrders
 );
 router.get(
   "/track-order-status/:id",

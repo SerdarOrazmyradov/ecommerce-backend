@@ -227,6 +227,73 @@ export const createOrderUser = async (
     };
   }
 };
+
+// services/orderService.js
+export const getMyOrdersUser = async (userId, page = 1, limit = 10) => {
+  try {
+    const offset = (page - 1) * limit;
+
+    // 1) Ulanyjynyň orderlerini almak (diňe pending ýa-da delivered)
+    const orders = await db.query(
+      `SELECT *
+       FROM orders
+       WHERE user_id = $1 
+         AND status IN ('pending', 'delivered')
+       ORDER BY created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [userId, limit, offset]
+    );
+
+    // Orderleriň ID-leri
+    const orderIds = orders.rows.map((o) => o.id);
+
+    // 2) Jemi sany (pending + delivered)
+    const total = await db.query(
+      `SELECT COUNT(*) AS count
+       FROM orders
+       WHERE user_id = $1 
+         AND status IN ('pending', 'delivered')`,
+      [userId]
+    );
+
+    let orderItems = [];
+    if (orderIds.length > 0) {
+      // 3) Orderleriň içindäki productlary almak
+      const items = await db.query(
+        `SELECT 
+            oi.id AS order_item_id,
+            oi.order_id,
+            p.id AS product_id,
+            p.name AS product_name,
+            p.price,
+            p.main_image
+         FROM orders_item oi
+         INNER JOIN products p ON oi.product_id = p.id
+         WHERE oi.order_id = ANY($1::int[])`,
+        [orderIds]
+      );
+
+      orderItems = items.rows;
+    }
+
+    // 4) Orderleri productlary bilen birleşdirmek
+    const ordersWithProducts = orders.rows.map((order) => ({
+      ...order,
+      products: orderItems.filter((item) => item.order_id === order.id),
+    }));
+
+    return {
+      orders: ordersWithProducts,
+      total: parseInt(total.rows[0].count),
+      page,
+      totalPages: Math.ceil(total.rows[0].count / limit),
+    };
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    throw error;
+  }
+};
+
 export const trackOrderStatusUser = async (userId, orderId) => {
   try {
     const query = `

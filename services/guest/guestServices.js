@@ -69,40 +69,61 @@ export const createProductAdmin = async (
 };
 export const getProductByIdGuest = async (product_id) => {
   try {
-    // 1. product barmy barla
-    const productCheck = await db.query(
-      `SELECT * FROM products WHERE id = $1`,
-      [product_id]
-    );
+    // 1. Product we category_name bilen al
+    const productQuery = `
+      SELECT 
+        p.*, 
+        c.name AS category_name 
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.id = $1
+    `;
+    const productCheck = await db.query(productQuery, [product_id]);
 
     if (productCheck.rows.length === 0) {
       return {
         success: false,
-        message: `product with id=${product_id} not found.`,
+        message: `Product with id=${product_id} not found.`,
       };
     }
 
-    const queryText = `
-      select * from products where id=$1
+    const product = productCheck.rows[0];
+
+    // 2. Related products (özünden başga)
+    const relatedProductsQuery = `
+      SELECT * FROM products 
+      WHERE category_id = $1 AND id <> $2 
+      ORDER BY created_at DESC 
+      LIMIT 10
     `;
+    const relatedProductsResult = await db.query(relatedProductsQuery, [
+      product.category_id,
+      product_id,
+    ]);
 
-    const values = [product_id];
-    const result = await db.query(queryText, values);
+    // 3. Product suratlary
+    const imagesQuery = `SELECT * FROM images WHERE product_id = $1`;
+    const imagesResult = await db.query(imagesQuery, [product_id]);
 
+    // 4. Response
     return {
       success: true,
       message: "Product detected successfully.",
-      details: result.rows[0],
+      details: {
+        ...product,
+        images: imagesResult.rows,
+      },
+      related: relatedProductsResult.rows,
     };
   } catch (error) {
     console.error("Error detecting product:", error);
-
     return {
       success: false,
       message: "An error occurred while detecting the product.",
     };
   }
 };
+
 export const getProductImagesByIdGuest = async (product_id) => {
   try {
     // 1. product barmy barla
@@ -264,7 +285,7 @@ export const getAllBestSellingProductsGuest = async (
   try {
     const offset = (page - 1) * limit;
     const baseQuery = `
-      SELECT orders_item.product_id, 
+      SELECT orders_item.product_id as id, 
         SUM(orders_item.count) AS total_count,
         products.name,
         products.description,

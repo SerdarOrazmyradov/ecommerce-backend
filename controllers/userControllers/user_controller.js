@@ -1,5 +1,6 @@
 import {
   createOrderUser,
+  getMyOrdersUser,
   logoutUser,
   trackOrderStatusUser,
 } from "../../services/user/userServices.js";
@@ -33,6 +34,21 @@ export const createOrder = async (req, res) => {
     // file_name
     order_items
   );
+
+  if (result.success) {
+    res.status(201).json(result);
+  } else {
+    res.status(400).json(result);
+  }
+  // res.json({
+  //   success:true,
+  //   message:"üstünlikli zakaz döredildi hemde order_item goşuldy"
+  // })
+};
+export const getMyOrders = async (req, res) => {
+  const userId = req.user.user_id;
+
+  const result = await getMyOrdersUser(userId);
 
   if (result.success) {
     res.status(201).json(result);
