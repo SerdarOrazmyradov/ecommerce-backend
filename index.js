@@ -25,7 +25,7 @@ const corsOptions = {
 console.log("__dirname: " + __dirname);
 
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173"); // Or '*' for all origins (use with caution)
+  res.setHeader("Access-Control-Allow-Origin", "https://ecommerce-frontend-bx39.onrender.com/"); // Or '*' for all origins (use with caution)
   res.setHeader(
     "Access-Control-Allow-Methods",
     "OPTIONS, GET, POST, PUT, PATCH, DELETE"
